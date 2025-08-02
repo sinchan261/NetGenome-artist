@@ -9,7 +9,7 @@ function App() {
     
       <Routes>
         {/* Admin Routes */}
-        <Route path="/admin" element={<Dashboard/>}></Route>
+        <Route path="/" element={<Dashboard/>}></Route>
         
         {/* Add other routes as needed */}
       </Routes>
