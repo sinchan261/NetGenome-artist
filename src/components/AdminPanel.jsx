@@ -2366,8 +2366,8 @@
 // export default AdminDashboard;
 
 import React, { useState, useEffect } from 'react';
-import { FiUsers, FiDatabase, FiUpload, FiMail, FiTrash2, FiEye, FiLoader, FiMoreVertical } from 'react-icons/fi';
 
+import { FiUsers, FiDatabase, FiUpload, FiMail, FiTrash2, FiEye, FiLoader, FiMoreVertical, FiDownload } from 'react-icons/fi';
 const AdminDashboard = () => {
   // State for all data
   const [artistStores, setArtistStores] = useState([]);
@@ -3089,85 +3089,163 @@ const AdminDashboard = () => {
   );
 
   // Update Database Tab
-  const UpdateDBTab = () => {
-    const [fileError, setFileError] = useState(null);
+// Update Database Tab
+const UpdateDBTab = () => {
+  const [fileError, setFileError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-    const handleFileChange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        // Check if file is PDF
-        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-          setSelectedFile(file);
-          setFileError(null);
-        } else {
-          setSelectedFile(null);
-          setFileError('Please upload a PDF file only');
-        }
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    validateAndSetFile(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files[0];
+    validateAndSetFile(file);
+  };
+
+  const validateAndSetFile = (file) => {
+    if (file) {
+      // Check if file is PDF or DOC/DOCX
+      const validTypes = ['application/pdf', 
+                         'application/msword', 
+                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      const validExtensions = ['.pdf', '.doc', '.docx'];
+      
+      const isTypeValid = validTypes.includes(file.type) || 
+                         validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+      
+      if (isTypeValid) {
+        setSelectedFile(file);
+        setFileError(null);
+      } else {
+        setSelectedFile(null);
+        setFileError('Please upload a PDF or Word document only');
       }
-    };
+    }
+  };
 
-    return (
-      <div>
-        <h1 style={{ color: '#1a1a1a', marginBottom: '20px' }}>Update Database</h1>
-        
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          padding: '30px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          maxWidth: '600px',
-          margin: '0 auto',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            border: '2px dashed #d4a373',
+  const downloadFile = () => {
+    if (!selectedFile) return;
+    
+    // Create a download link
+    const url = URL.createObjectURL(selectedFile);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = selectedFile.name;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
+  };
+
+  return (
+    <div>
+      <h1 style={{ color: '#1a1a1a', marginBottom: '20px' }}>Update Database</h1>
+      
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        padding: '30px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        maxWidth: '600px',
+        margin: '0 auto',
+        textAlign: 'center'
+      }}>
+        <div 
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{
+            border: `2px dashed ${isDragging ? '#d4a373' : '#d4a373'}`,
             borderRadius: '8px',
             padding: '40px 20px',
             marginBottom: '20px',
-            backgroundColor: '#fffaf5'
+            backgroundColor: isDragging ? '#fff8f0' : '#fffaf5',
+            transition: 'all 0.3s ease'
+          }}
+        >
+          <FiUpload style={{ fontSize: '48px', color: '#d4a373', marginBottom: '15px' }} />
+          <h3 style={{ color: '#1a1a1a', marginTop: 0 }}>Upload Magazine File</h3>
+          <p style={{ color: '#666', marginBottom: '20px' }}>
+            Drag and drop a PDF or Word document here, or click to select
+          </p>
+          
+          <label style={{
+            display: 'inline-block',
+            padding: '10px 20px',
+            backgroundColor: '#d4a373',
+            color: 'white',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginBottom: '10px'
           }}>
-            <FiUpload style={{ fontSize: '48px', color: '#d4a373', marginBottom: '15px' }} />
-            <h3 style={{ color: '#1a1a1a', marginTop: 0 }}>Upload Magazine File</h3>
-            <p style={{ color: '#666', marginBottom: '20px' }}>Select a PDF file to update the artist database</p>
-            
-            <label style={{
-              display: 'inline-block',
-              padding: '10px 20px',
-              backgroundColor: '#d4a373',
-              color: 'white',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginBottom: '10px'
-            }}>
-              Choose PDF File
-              <input 
-                type="file" 
-                onChange={handleFileChange}
-                accept=".pdf,application/pdf"
-                style={{ display: 'none' }}
-                disabled={loading.upload}
-              />
-            </label>
-            
-            {selectedFile && (
-              <p style={{ color: '#1a1a1a', margin: '10px 0' }}>
+            Choose File
+            <input 
+              type="file" 
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              style={{ display: 'none' }}
+              disabled={loading.upload}
+            />
+          </label>
+          
+          {selectedFile && (
+            <div style={{ marginTop: '15px' }}>
+              <p style={{ color: '#1a1a1a', margin: '5px 0' }}>
                 Selected: <strong>{selectedFile.name}</strong> ({Math.round(selectedFile.size / 1024)} KB)
               </p>
-            )}
-            
-            {fileError && (
-              <p style={{ 
-                color: '#d32f2f', 
-                margin: '10px 0',
-                backgroundColor: '#ffe6e6',
-                padding: '8px',
-                borderRadius: '4px'
-              }}>
-                {fileError}
-              </p>
-            )}
-          </div>
+              <button 
+                onClick={downloadFile}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: '#f5f5f5',
+                  color: '#1a1a1a',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  marginTop: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                <FiDownload /> Download
+              </button>
+            </div>
+          )}
           
+          {fileError && (
+            <p style={{ 
+              color: '#d32f2f', 
+              margin: '10px 0',
+              backgroundColor: '#ffe6e6',
+              padding: '8px',
+              borderRadius: '4px'
+            }}>
+              {fileError}
+            </p>
+          )}
+        </div>
+        
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
           <button 
             onClick={handleUpload}
             disabled={!selectedFile || loading.upload || fileError}
@@ -3179,26 +3257,27 @@ const AdminDashboard = () => {
               borderRadius: '4px',
               cursor: (!selectedFile || fileError) ? 'not-allowed' : 'pointer',
               fontSize: '16px',
-              width: '100%',
-              maxWidth: '300px'
+              minWidth: '200px'
             }}
           >
             {loading.upload ? 'Uploading...' : 'Update Database'}
           </button>
-          
-          <div style={{ marginTop: '30px', textAlign: 'left', color: '#666' }}>
-            <h4 style={{ color: '#1a1a1a' }}>Instructions:</h4>
-            <ul style={{ paddingLeft: '20px' }}>
-              <li>Upload a PDF file containing artist information</li>
-              <li>The file should include store name, owner, email, and other relevant details</li>
-              <li>Existing records will be updated, new records will be added</li>
-              <li>This process may take a few minutes depending on file size</li>
-            </ul>
-          </div>
+        </div>
+        
+        <div style={{ marginTop: '30px', textAlign: 'left', color: '#666' }}>
+          <h4 style={{ color: '#1a1a1a' }}>Instructions:</h4>
+          <ul style={{ paddingLeft: '20px' }}>
+            <li>Upload a PDF or Word document containing artist information</li>
+            <li>You can drag and drop files or click to select</li>
+            <li>The file should include store name, owner, email, and other relevant details</li>
+            <li>Existing records will be updated, new records will be added</li>
+            <li>This process may take a few minutes depending on file size</li>
+          </ul>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   // Artist Profile Tab
   const ArtistProfileTab = () => {
